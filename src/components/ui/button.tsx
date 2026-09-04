@@ -3,21 +3,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors duration-150 ease-out disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.98]",
+  "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-[color,background-color,box-shadow,transform] duration-150 ease-out disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 active:scale-[0.96] touch-manipulation",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
         outline:
-          "bg-card text-foreground shadow-[0_0_0_1px_var(--color-border)] hover:bg-muted",
+          "bg-card text-foreground shadow-[0_0_0_1.5px_var(--color-border)] hover:bg-muted",
         ghost: "text-muted-foreground hover:bg-muted hover:text-foreground",
         destructive: "text-destructive hover:bg-destructive/10",
       },
       size: {
-        default: "h-10 px-3.5 text-sm",
-        sm: "h-8 px-2.5 text-sm",
-        icon: "size-10",
-        "icon-sm": "size-8",
+        default: "h-12 min-h-12 px-4 text-xl",
+        sm: "h-11 min-h-11 px-3 text-lg",
+        icon: "size-12",
+        "icon-sm": "size-11",
       },
     },
     defaultVariants: {
