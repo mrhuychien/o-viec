@@ -1,12 +1,13 @@
 # Ô Việc
 
-Bảng quản lý công việc: một trang, tám ô. Tick việc thì dòng rớt xuống **Đã xong**. Có thể thêm/bớt ô, đổi tên ô. Dữ liệu lưu trên trình duyệt (localStorage).
+Sổ việc viết tay: một trang, nhiều ô giấy. Tick thì dòng rớt xuống **Đã xong**. Đăng nhập Google hoặc X để mở cùng sổ trên máy tính và điện thoại.
 
 ## Dùng
 
-- Gõ vào **Thêm việc…** rồi Enter
-- Tick checkbox để hoàn thành — việc rớt xuống **Đã xong**
-- **Thêm ô** / nút X trên ô để thêm hoặc xóa stack
+- Đăng nhập một lần
+- Gõ **Thêm việc…** rồi Enter
+- Tick ô vuông để hoàn thành
+- **Thêm ô** / nút X để thêm hoặc xóa stack
 - Bấm tên ô để đổi tên
 
 ## Chạy local
@@ -18,20 +19,13 @@ npm install
 npm run dev
 ```
 
-Mở http://localhost:8080
-
 ```bash
 npm run build
 npm run typecheck
 ```
 
-## Deploy lên Vercel
+## Deploy Vercel
 
-1. Vào [vercel.com/new](https://vercel.com/new)
-2. Import repo **mrhuychien/o-viec** (repo đang ở chế độ private — đăng nhập GitHub của bạn)
-3. Framework preset: Vite. Build command: `npm run build`.
-4. Deploy.
+Import repo `mrhuychien/o-viec` trên Vercel. Build: `npm run build`.
 
-`vite.config.ts` đã bật Nitro preset `vercel`.
-
-Stack: React 19, TanStack Start, Tailwind v4, Zustand.
+Stack: React 19, TanStack Start, Tailwind v4, Zustand, Better Auth.
