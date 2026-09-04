@@ -68,8 +68,8 @@ export function StackCard({
   }
 
   return (
-    <section className="flex min-h-0 flex-col rounded-xl bg-card p-1.5 text-card-foreground shadow-[var(--shadow-card)] md:p-2">
-      <header className="flex items-center gap-1 px-1 pb-1">
+    <section className="sheet flex min-h-80 flex-col rounded-lg p-3 text-card-foreground md:min-h-96 md:p-4">
+      <header className="flex items-center gap-2 px-1 pb-2">
         {editing ? (
           <input
             ref={titleRef}
@@ -85,28 +85,28 @@ export function StackCard({
             }}
             maxLength={32}
             aria-label="Tên ô"
-            className="min-w-0 flex-1 bg-transparent font-display text-sm font-medium tracking-tight text-foreground outline-none md:text-base"
+            className="min-w-0 flex-1 bg-transparent font-display text-2xl leading-tight text-foreground outline-none md:text-3xl"
           />
         ) : (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="min-w-0 flex-1 truncate text-left font-display text-sm font-medium tracking-tight italic text-foreground md:text-base"
+            className="min-w-0 flex-1 truncate text-left font-display text-2xl leading-tight text-foreground md:text-3xl"
             title="Đổi tên ô"
           >
             {stack.title}
           </button>
         )}
-        <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+        <span className="shrink-0 px-1 text-lg tabular-nums text-muted-foreground">
           {open.length}
         </span>
         {canRemove ? (
           confirmRemove ? (
-            <div className="flex shrink-0 items-center gap-0.5">
+            <div className="flex shrink-0 items-center gap-1">
               <Button
                 variant="destructive"
                 size="sm"
-                className="h-7 px-2 text-xs"
+                className="h-11 px-3 text-lg"
                 onClick={onRemove}
               >
                 Xóa
@@ -114,7 +114,7 @@ export function StackCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs"
+                className="h-11 px-3 text-lg"
                 onClick={() => setConfirmRemove(false)}
               >
                 Hủy
@@ -124,23 +124,23 @@ export function StackCard({
             <Button
               variant="ghost"
               size="icon-sm"
-              className="size-7 shrink-0 text-muted-foreground"
+              className="shrink-0 text-muted-foreground"
               aria-label={`Xóa ô ${stack.title}`}
               onClick={() => {
                 if (stack.tasks.length === 0) onRemove();
                 else setConfirmRemove(true);
               }}
             >
-              <X className="size-3.5" />
+              <X className="size-5" />
             </Button>
           )
         ) : null}
       </header>
 
-      <form onSubmit={submitTask} className="mb-1 shrink-0 px-0.5">
-        <label className="flex items-center gap-2 rounded-md bg-muted/70 px-1.5 py-1 md:py-1.5">
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
-            <Plus className="size-3.5" strokeWidth={2} />
+      <form onSubmit={submitTask} className="mb-2 shrink-0 px-0.5">
+        <label className="flex min-h-12 items-center gap-2 rounded-md bg-muted/80 px-2 py-1.5">
+          <span className="flex size-7 shrink-0 items-center justify-center text-muted-foreground">
+            <Plus className="size-5" strokeWidth={2.25} />
           </span>
           <input
             ref={addRef}
@@ -148,14 +148,14 @@ export function StackCard({
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Thêm việc…"
             maxLength={200}
-            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 bg-transparent text-xl text-foreground outline-none placeholder:text-muted-foreground md:text-2xl"
           />
         </label>
       </form>
 
       <div className="stack-scroll min-h-0 flex-1 overflow-y-auto px-0.5">
         {open.length === 0 ? (
-          <p className="px-1.5 py-2 text-xs leading-snug text-muted-foreground">
+          <p className="px-1 py-3 text-lg leading-snug text-muted-foreground">
             {done.length > 0 ? "Xong hết việc đang mở." : "Chưa có việc. Gõ rồi Enter."}
           </p>
         ) : (
@@ -173,15 +173,13 @@ export function StackCard({
         )}
 
         {done.length > 0 ? (
-          <div className="mt-1 border-t border-border pt-1">
-            <div className="flex items-center justify-between px-1 py-0.5">
-              <p className="text-xs font-medium text-muted-foreground">
-                Đã xong · {done.length}
-              </p>
+          <div className="mt-2 border-t border-border pt-2">
+            <div className="flex items-center justify-between gap-2 px-1 py-1">
+              <p className="text-lg text-muted-foreground">Đã xong · {done.length}</p>
               <button
                 type="button"
                 onClick={onClearDone}
-                className="text-xs text-muted-foreground hover:text-foreground"
+                className="min-h-11 px-1 text-lg text-muted-foreground hover:text-foreground"
               >
                 Xóa hết
               </button>

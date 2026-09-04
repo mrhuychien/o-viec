@@ -1,22 +1,19 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { saveBoard } from "@/lib/board-api";
+import {
+  DEFAULT_STACKS,
+  MAX_STACKS,
+  MIN_STACKS,
+  type Stack,
+} from "@/lib/board-types";
 
-export type Task = {
-  id: string;
-  text: string;
-  done: boolean;
-  createdAt: number;
-  completedAt: number | null;
-};
-
-export type Stack = {
-  id: string;
-  title: string;
-  tasks: Task[];
-};
+export type { Stack, Task } from "@/lib/board-types";
+export { MAX_STACKS, MIN_STACKS, DEFAULT_STACKS };
 
 type BoardStore = {
   stacks: Stack[];
+  ready: boolean;
+  hydrate: (stacks: Stack[]) => void;
   addStack: () => string;
   removeStack: (id: string) => void;
   renameStack: (id: string, title: string) => void;
@@ -26,187 +23,123 @@ type BoardStore = {
   clearDone: (stackId: string) => void;
 };
 
-export const MAX_STACKS = 16;
-export const MIN_STACKS = 1;
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let pending: Stack[] | null = null;
 
-function task(id: string, text: string, done = false): Task {
-  return {
-    id,
-    text,
-    done,
-    createdAt: 1,
-    completedAt: done ? 2 : null,
-  };
+function queueSave(stacks: Stack[]) {
+  pending = stacks;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    const next = pending;
+    pending = null;
+    if (next) void saveBoard({ data: next }).catch(() => {});
+  }, 400);
 }
 
-export const DEFAULT_STACKS: Stack[] = [
-  {
-    id: "s1",
-    title: "Hôm nay",
-    tasks: [
-      task("s1-t1", "Soạn email báo cáo tuần"),
-      task("s1-t2", "Gọi anh Minh xác nhận lịch"),
-      task("s1-t3", "Đưa quần áo đi giặt", true),
-    ],
-  },
-  {
-    id: "s2",
-    title: "Tuần này",
-    tasks: [
-      task("s2-t1", "Lên kế hoạch sprint"),
-      task("s2-t2", "Mua quà sinh nhật mẹ"),
-      task("s2-t3", "Đặt lịch khám răng"),
-    ],
-  },
-  {
-    id: "s3",
-    title: "Công việc",
-    tasks: [
-      task("s3-t1", "Viết đề xuất dự án mới"),
-      task("s3-t2", "Review tài liệu API"),
-      task("s3-t3", "Chuẩn bị slide họp", true),
-    ],
-  },
-  {
-    id: "s4",
-    title: "Việc nhà",
-    tasks: [
-      task("s4-t1", "Sửa vòi nước bếp"),
-      task("s4-t2", "Tính tiền điện tháng này", true),
-      task("s4-t3", "Dọn tủ quần áo"),
-    ],
-  },
-  {
-    id: "s5",
-    title: "Học tập",
-    tasks: [
-      task("s5-t1", "Xem bài React Query"),
-      task("s5-t2", "Ôn 20 từ vựng tiếng Anh"),
-      task("s5-t3", "Đọc chương 3"),
-    ],
-  },
-  {
-    id: "s6",
-    title: "Cá nhân",
-    tasks: [
-      task("s6-t1", "Chạy bộ 30 phút"),
-      task("s6-t2", "Gọi về nhà", true),
-      task("s6-t3", "Đặt lịch cắt tóc"),
-    ],
-  },
-  {
-    id: "s7",
-    title: "Ý tưởng",
-    tasks: [
-      task("s7-t1", "App ghi chú bằng giọng nói"),
-      task("s7-t2", "Tủ đồ thông minh"),
-    ],
-  },
-  {
-    id: "s8",
-    title: "Chờ",
-    tasks: [
-      task("s8-t1", "Phản hồi từ khách"),
-      task("s8-t2", "Báo giá in ấn"),
-      task("s8-t3", "Xác nhận phòng họp"),
-    ],
-  },
-];
+export function flushBoard() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  const next = pending ?? useBoardStore.getState().stacks;
+  pending = null;
+  if (useBoardStore.getState().ready) {
+    void saveBoard({ data: next }).catch(() => {});
+  }
+}
 
-export const useBoardStore = create<BoardStore>()(
-  persist(
-    (set, get) => ({
-      stacks: DEFAULT_STACKS,
+export const useBoardStore = create<BoardStore>()((set, get) => ({
+  stacks: DEFAULT_STACKS,
+  ready: false,
 
-      addStack: () => {
-        const { stacks } = get();
-        if (stacks.length >= MAX_STACKS) return "";
-        const id = crypto.randomUUID();
-        const n = stacks.length + 1;
-        set({
-          stacks: [...stacks, { id, title: `Ô ${n}`, tasks: [] }],
-        });
-        return id;
-      },
+  hydrate: (stacks) => {
+    set({ stacks, ready: true });
+  },
 
-      removeStack: (id) => {
-        const { stacks } = get();
-        if (stacks.length <= MIN_STACKS) return;
-        set({ stacks: stacks.filter((s) => s.id !== id) });
-      },
+  addStack: () => {
+    const { stacks } = get();
+    if (stacks.length >= MAX_STACKS) return "";
+    const id = crypto.randomUUID();
+    const n = stacks.length + 1;
+    const next = [...stacks, { id, title: `Ô ${n}`, tasks: [] }];
+    set({ stacks: next });
+    queueSave(next);
+    return id;
+  },
 
-      renameStack: (id, title) => {
-        const next = title.trim().slice(0, 32);
-        if (!next) return;
-        set({
-          stacks: get().stacks.map((s) => (s.id === id ? { ...s, title: next } : s)),
-        });
-      },
+  removeStack: (id) => {
+    const { stacks } = get();
+    if (stacks.length <= MIN_STACKS) return;
+    const next = stacks.filter((s) => s.id !== id);
+    set({ stacks: next });
+    queueSave(next);
+  },
 
-      addTask: (stackId, text) => {
-        const trimmed = text.trim().slice(0, 200);
-        if (!trimmed) return;
-        set({
-          stacks: get().stacks.map((s) =>
-            s.id !== stackId
-              ? s
-              : {
-                  ...s,
-                  tasks: [
-                    {
-                      id: crypto.randomUUID(),
-                      text: trimmed,
-                      done: false,
-                      createdAt: Date.now(),
-                      completedAt: null,
-                    },
-                    ...s.tasks,
-                  ],
-                },
-          ),
-        });
-      },
+  renameStack: (id, title) => {
+    const nextTitle = title.trim().slice(0, 32);
+    if (!nextTitle) return;
+    const next = get().stacks.map((s) => (s.id === id ? { ...s, title: nextTitle } : s));
+    set({ stacks: next });
+    queueSave(next);
+  },
 
-      toggleTask: (stackId, taskId) => {
-        set({
-          stacks: get().stacks.map((s) =>
-            s.id !== stackId
-              ? s
-              : {
-                  ...s,
-                  tasks: s.tasks.map((t) =>
-                    t.id !== taskId
-                      ? t
-                      : t.done
-                        ? { ...t, done: false, completedAt: null }
-                        : { ...t, done: true, completedAt: Date.now() },
-                  ),
-                },
-          ),
-        });
-      },
+  addTask: (stackId, text) => {
+    const trimmed = text.trim().slice(0, 200);
+    if (!trimmed) return;
+    const next = get().stacks.map((s) =>
+      s.id !== stackId
+        ? s
+        : {
+            ...s,
+            tasks: [
+              {
+                id: crypto.randomUUID(),
+                text: trimmed,
+                done: false,
+                createdAt: Date.now(),
+                completedAt: null,
+              },
+              ...s.tasks,
+            ],
+          },
+    );
+    set({ stacks: next });
+    queueSave(next);
+  },
 
-      deleteTask: (stackId, taskId) => {
-        set({
-          stacks: get().stacks.map((s) =>
-            s.id !== stackId ? s : { ...s, tasks: s.tasks.filter((t) => t.id !== taskId) },
-          ),
-        });
-      },
+  toggleTask: (stackId, taskId) => {
+    const next = get().stacks.map((s) =>
+      s.id !== stackId
+        ? s
+        : {
+            ...s,
+            tasks: s.tasks.map((t) =>
+              t.id !== taskId
+                ? t
+                : t.done
+                  ? { ...t, done: false, completedAt: null }
+                  : { ...t, done: true, completedAt: Date.now() },
+            ),
+          },
+    );
+    set({ stacks: next });
+    queueSave(next);
+  },
 
-      clearDone: (stackId) => {
-        set({
-          stacks: get().stacks.map((s) =>
-            s.id !== stackId ? s : { ...s, tasks: s.tasks.filter((t) => !t.done) },
-          ),
-        });
-      },
-    }),
-    {
-      name: "o-viec-board",
-      storage: createJSONStorage(() => localStorage),
-      skipHydration: true,
-      partialize: (state) => ({ stacks: state.stacks }),
-    },
-  ),
-);
+  deleteTask: (stackId, taskId) => {
+    const next = get().stacks.map((s) =>
+      s.id !== stackId ? s : { ...s, tasks: s.tasks.filter((t) => t.id !== taskId) },
+    );
+    set({ stacks: next });
+    queueSave(next);
+  },
+
+  clearDone: (stackId) => {
+    const next = get().stacks.map((s) =>
+      s.id !== stackId ? s : { ...s, tasks: s.tasks.filter((t) => !t.done) },
+    );
+    set({ stacks: next });
+    queueSave(next);
+  },
+}));
